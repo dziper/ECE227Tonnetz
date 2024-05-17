@@ -34,3 +34,8 @@ Research project for ECE 227
 ### Cluster Similar Songs/Graphs
 
 
+## Sources
+- `Statistics.ipynb`: https://nbviewer.org/github/craffel/midi-ground-truth/blob/master/Statistics.ipynb
+- `Tutorial.ipynb`: https://nbviewer.org/github/craffel/midi-dataset/blob/master/Tutorial.ipynb
+- `STL-*.mid`: https://bitmidi.com/darker-than-black-gemini-of-the-meteor-tsukiakari-no-michishirube-mid
+
