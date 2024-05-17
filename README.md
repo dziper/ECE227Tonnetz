@@ -4,7 +4,7 @@ Research project for ECE 227
 ### Get MIDI files for lots of songs
 - The `midis` contains `TLS-*.mid`, which are different versions of Twinker Little Star.
 - The `csvs` contains `TLS-*.csv`, which are csv files converted from the midi files.
-- The `midis/test.mid` and `midis/test.csv` are test files. We can adjust the `test.csv` and convert it into `test.mid` and play it or build graph.
+- The `midis/test.mid` and `midis/test.csv` are test files. We can adjust the `test.csv` and convert it into `test.mid` and play it with `HexaChord`.
 
 ### Parse note/chord data from MIDI files
 - Need to decide what data to get (just notes, chords, instrumentation)
