@@ -1,0 +1,21 @@
+0, 0, Header, 1, 2, 256
+1, 0, Start_track
+1, 0, Time_signature, 4, 2, 24, 8
+1, 0, Key_signature, 0, "major"
+1, 0, Tempo, 631577
+1, 0, Title_t, "Greensleeves"
+1, 0, Text_t, "Traditional"
+1, 0, Copyright_t, "Jim Paterson"
+1, 0, End_track
+2, 0, Start_track
+2, 0, Program_c, 0, 0
+2, 0, Note_on_c, 0, 60, 100
+2, 240, Note_off_c, 0, 60, 0
+2, 240, Note_on_c, 0, 64, 100
+2, 480, Note_off_c, 0, 64, 0
+2, 480, Note_on_c, 0, 67, 100
+2, 720, Note_off_c, 0, 67, 0
+2, 720, Note_on_c, 0, 72, 100
+2, 960, Note_off_c, 0, 72, 0
+2, 961, End_track
+0, 0, End_of_file
