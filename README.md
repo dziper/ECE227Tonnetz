@@ -11,6 +11,11 @@ Research project for ECE 227
 - We can use `py-midicsv` to convert a MIDI file into a CSV file.
 - We can use `pretty-midi` to get statistics of a MIDI file.
 
+#### Maybe revalant attributes in Meta-Events of MIDI
+- `Track, Time, Time_signature, Num, Denom, Click, NotesQ`
+- `Track, Time, Tempo, Number`
+
+
 ### Encode each MIDI file into a graph
 - Want to encode something meaningful about the song into the graph, to be able to compare different songs
 - Transition probabilities between notes on circle of fifths
@@ -38,4 +43,5 @@ Research project for ECE 227
 - `Statistics.ipynb`: https://nbviewer.org/github/craffel/midi-ground-truth/blob/master/Statistics.ipynb
 - `Tutorial.ipynb`: https://nbviewer.org/github/craffel/midi-dataset/blob/master/Tutorial.ipynb
 - `STL-*.mid`: https://bitmidi.com/darker-than-black-gemini-of-the-meteor-tsukiakari-no-michishirube-mid
+- `py_midicsv`: https://pypi.org/project/py_midicsv/
 
