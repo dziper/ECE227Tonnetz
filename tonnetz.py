@@ -2,26 +2,31 @@ from typing import List, Tuple, Optional, Dict, Set
 import networkx as nx
 import math
 from math import cos, sin, pi
+from utils import NOTE_LOOKUP, num_to_note
 
 from overrides import overrides
 
-NOTE_LOOKUP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-
 Coord = Tuple[int, int]
+DEFAULT_START = 57  # A3
+
+TONNETZ_INTERVALS = (
+    (1,1,10), (1,2,9), (1,3,8), (1,4,7), (1,5,6), (2,2,8),
+    (2,3,7), (2,4,6), (2,5,5), (3,4,5), (3,3,6), (4,4,4)
+)
 
 class Tonnetz:
     def __init__(self, intervals: Tuple[int, int, int] = (3, 4, 5), x: int = 10, y: int = 20,
-                 start_note=0, start_octave=3):
+                 start_note=DEFAULT_START):
         self.G = nx.triangular_lattice_graph(x, y)
         pos = nx.get_node_attributes(self.G, "pos")
         self.pos = rotate_positions(pos, 30)
-        self._compute_notes(intervals, start_note, start_octave)
+        self._compute_notes(intervals, start_note)
 
     def draw(self):
-        nx.draw(self.G, self.pos)
-        nx.draw_networkx_labels(self.G, self.pos, self.notes)
+        nx.draw(self.G, self.pos, node_size=200)
+        nx.draw_networkx_labels(self.G, self.pos, self.notes, font_size=8)
 
-    def _compute_notes(self, intervals, start_note, start_octave):
+    def _compute_notes(self, intervals, start_note):
         self.notes: Dict[Coord, str] = {name: "A" for name in self.G.nodes()}  # Maps note coord to note name
         self.note_map: Dict[int, List[Coord]] = {}  # Maps note number to list of positions in Graph
 
@@ -37,7 +42,7 @@ class Tonnetz:
                 else: curr += len(NOTE_LOOKUP) - intervals[2]
                 last_start = curr
 
-            self.notes[coord] = num_to_note(curr, start_octave)
+            self.notes[coord] = num_to_note(curr)
             if curr not in self.note_map:
                 self.note_map[curr] = []
             self.note_map[curr].append(coord)
@@ -50,11 +55,6 @@ def rotate_positions(pos, degrees):
         p[0] * cos(rad) - p[1] * sin(rad),
         p[1] * cos(rad) + p[0] * sin(rad)
     ) for coord, p in pos.items()}
-
-
-def num_to_note(note_num: int, start_octave=0) -> str:
-    curr_octave = start_octave + math.floor(note_num / len(NOTE_LOOKUP))
-    return f"{NOTE_LOOKUP[note_num % len(NOTE_LOOKUP)]}{curr_octave}"
 
 
 def dist(fromCoord, toCoord, pos):
@@ -72,7 +72,7 @@ class TonnetzSong(Tonnetz):
         trans = set()
         prev = None
         for note in note_sequence:
-            if prev is None:
+            if prev is None or note not in self.note_map or prev not in self.note_map:
                 prev = note
                 continue
 
@@ -92,4 +92,4 @@ class TonnetzSong(Tonnetz):
     @overrides
     def draw(self):
         Tonnetz.draw(self)
-        nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions), edge_color='r')
+        nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions), edge_color='r', width=2)
