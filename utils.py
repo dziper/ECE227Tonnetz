@@ -1,7 +1,6 @@
 import math
 import py_midicsv as pm
 import csv
-import mido
 
 NOTE_LOOKUP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -43,67 +42,3 @@ def csv_to_midi(csv_file_path: str, save_path: str):
     with open(save_path, "wb") as output_file:
         midi_writer = pm.FileWriter(output_file)
         midi_writer.write(midi_object)
-        
-        
-def get_midi_obj(midi_file: str):
-    return mido.MidiFile(midi_file, clip=True)
-
-
-def _get_time_signatures(midi_obj) -> list:
-    time_signatures = []
-    for track in midi_obj.tracks:
-        for msg in track:
-            if msg.type == 'time_signature':
-                time_signatures.append(msg)
-    
-    return time_signatures
-                
-                
-def _get_tempos(midi_obj) -> list:
-    tempos = []
-    for track in midi_obj.tracks:
-        for msg in track:
-            if msg.type == 'set_tempo':
-                tempos.append(msg)
-    
-    return tempos
-
-
-def get_measures(midi_obj) -> list:
-    time_signatures = _get_time_signatures(midi_obj)
-    tempos = _get_tempos(midi_obj)
-    
-    if time_signatures:
-        time_signature = time_signatures[0]
-        numerator = time_signature.numerator
-        denominator = time_signature.denominator
-    else:
-        numerator = 4  # default to 4/4 time
-        denominator = 4
-
-    if tempos:
-        tempo = tempos[0].tempo
-    else:
-        tempo = 500000  # default to 120 BPM
-
-    ticks_per_beat = midi_obj.ticks_per_beat
-    ticks_per_measure = (ticks_per_beat * 4 * numerator) / denominator
-    
-    current_ticks = 0
-    current_measure = []
-    measures = []
-
-    for track in midi_obj.tracks:
-        for msg in track:
-            current_ticks += msg.time
-            current_measure.append(msg)
-            if current_ticks >= ticks_per_measure:
-                measures.append(current_measure)
-                current_measure = []
-                current_ticks = 0
-
-    # Handle the last measure if it contains any messages
-    if current_measure:
-        measures.append(current_measure)
-        
-    return measures
