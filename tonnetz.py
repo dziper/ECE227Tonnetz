@@ -22,12 +22,12 @@ class Tonnetz:
         self.pos = rotate_positions(pos, 30)
         self._compute_notes(intervals, start_note)
 
-    def draw(self, draw_edges=True):
+    def draw(self, draw_edges=True, ax=None):
         if draw_edges:
-            nx.draw(self.G, self.pos, node_size=150)
+            nx.draw(self.G, self.pos, node_size=150, ax=ax)
         else:
-            nx.draw_networkx_nodes(self.G, self.pos, node_size=150)
-        nx.draw_networkx_labels(self.G, self.pos, self.notes, font_size=6)
+            nx.draw_networkx_nodes(self.G, self.pos, node_size=150, ax=ax)
+        nx.draw_networkx_labels(self.G, self.pos, self.notes, font_size=6, ax=ax)
 
     def _compute_notes(self, intervals, start_note):
         self.notes: Dict[Coord, str] = {name: "A" for name in self.G.nodes()}  # Maps note coord to note name
@@ -96,10 +96,8 @@ class TonnetzSong(Tonnetz):
             prev = note
 
     @overrides
-    def draw(self, draw_edges=False, edge_width_adjust=WIDTH_ADJUST):
-        Tonnetz.draw(self, draw_edges=draw_edges)
+    def draw(self, draw_edges=False, edge_width_adjust=WIDTH_ADJUST, ax=None):
+        Tonnetz.draw(self, draw_edges=draw_edges, ax=ax)
         weights = [v * edge_width_adjust for v in self.transitions.values()]
         nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions.keys()),
-                               width=weights, edge_color='r')
-
-#%%
+                               width=weights, edge_color='r', ax=ax)

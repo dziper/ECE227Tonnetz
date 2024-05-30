@@ -1,4 +1,5 @@
 import math
+import mido
 import py_midicsv as pm
 import csv
 
@@ -65,3 +66,62 @@ GM_INSTRUMENT_NAMES = [
     "Steel Drums", "Woodblock", "Taiko Drum", "Melodic Tom", "Synth Drum", "Reverse Cymbal", "Guitar Fret Noise",
     "Breath Noise", "Seashore", "Bird Tweet", "Telephone Ring", "Helicopter", "Applause", "Gunshot"
 ]
+
+MIDI_CHANNEL_COUNT = 16
+TRANSITION_COUNT_THRESH = 10
+
+
+def type_0_track_to_notes(track: mido.MidiTrack):
+    channels = [[] for _ in range(MIDI_CHANNEL_COUNT)]  # Max 16 midi channels
+    instruments = [None] * MIDI_CHANNEL_COUNT
+    last_note = [None] * MIDI_CHANNEL_COUNT
+    transitions = [0] * MIDI_CHANNEL_COUNT
+    for msg in track:
+        if msg.type == "program_change":
+            instruments[msg.channel] = GM_INSTRUMENT_NAMES[msg.program]
+        if msg.type == "note_on" and msg.velocity != 0:
+            channels[msg.channel].append(msg.note)
+            if msg.note != last_note[msg.channel - 1]:
+                last_note[msg.channel - 1] = msg.note
+                transitions[msg.channel - 1] += 1
+
+    for i, tr in enumerate(transitions):
+        if tr < TRANSITION_COUNT_THRESH:
+            channels[i] = []
+    return channels, instruments
+
+
+def track_to_notes(track: mido.MidiTrack):
+    notes = []
+    instrument = None
+    last_note = None
+    transitions = 0
+    for msg in track:
+        if msg.type == "note_on" and msg.velocity != 0:
+            notes.append(msg.note)
+            if msg.note != last_note:
+                last_note = msg.note
+                transitions += 1
+        if msg.type == "program_change":
+            instrument = GM_INSTRUMENT_NAMES[msg.program]
+
+    if transitions < TRANSITION_COUNT_THRESH: return [], None
+    return notes, instrument
+
+
+def mido_to_notes_and_instr(midi: mido.MidiFile):
+    channels = []
+    instrs = []
+    if midi.type == 2:
+        return None, None
+    if midi.type == 1:
+        for track in midi.tracks:
+            notes, instr = track_to_notes(track)
+            if len(notes) > 0:
+                channels.append(notes)
+                instrs.append(instr)
+    if midi.type == 0:
+        channels, instrs = type_0_track_to_notes(midi.tracks[0])
+
+    return channels, instrs
+
