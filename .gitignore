@@ -1,6 +1,7 @@
 csvs/
 midis/
 data/
+analysis/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
