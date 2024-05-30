@@ -15,16 +15,19 @@ TONNETZ_INTERVALS = (
 )
 
 class Tonnetz:
-    def __init__(self, intervals: Tuple[int, int, int] = (3, 4, 5), x: int = 10, y: int = 20,
+    def __init__(self, intervals: Tuple[int, int, int] = (3, 4, 5), x: int = 12, y: int = 24,
                  start_note=DEFAULT_START):
         self.G = nx.triangular_lattice_graph(x, y)
         pos = nx.get_node_attributes(self.G, "pos")
         self.pos = rotate_positions(pos, 30)
         self._compute_notes(intervals, start_note)
 
-    def draw(self):
-        nx.draw(self.G, self.pos, node_size=200)
-        nx.draw_networkx_labels(self.G, self.pos, self.notes, font_size=8)
+    def draw(self, draw_edges=True):
+        if draw_edges:
+            nx.draw(self.G, self.pos, node_size=150)
+        else:
+            nx.draw_networkx_nodes(self.G, self.pos, node_size=150)
+        nx.draw_networkx_labels(self.G, self.pos, self.notes, font_size=6)
 
     def _compute_notes(self, intervals, start_note):
         self.notes: Dict[Coord, str] = {name: "A" for name in self.G.nodes()}  # Maps note coord to note name
@@ -62,14 +65,15 @@ def dist(fromCoord, toCoord, pos):
 
 
 DIST_THRESH = 4
+WIDTH_ADJUST = 10
 
 class TonnetzSong(Tonnetz):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.transitions: List[Tuple[Coord, Coord]] = []
+        self.transitions: Dict[Tuple[Coord, Coord], float] = {}
 
     def analyze(self, note_sequence: List[int]):
-        trans = set()
+        self.transitions = {}
         prev = None
         for note in note_sequence:
             if prev is None or note not in self.note_map or prev not in self.note_map:
@@ -85,11 +89,17 @@ class TonnetzSong(Tonnetz):
                         closest = currCoord
                         closest_dist = d
                 if closest_dist < DIST_THRESH:
-                    trans.add((prevCoord, closest))
+                    transition = (prevCoord, closest)
+                    if transition not in self.transitions:
+                        self.transitions[transition] = 0
+                    self.transitions[transition] += 1 / len(note_sequence)
             prev = note
-        self.transitions = list(trans)
 
     @overrides
-    def draw(self):
-        Tonnetz.draw(self)
-        nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions), edge_color='r', width=2)
+    def draw(self, draw_edges=False, edge_width_adjust=WIDTH_ADJUST):
+        Tonnetz.draw(self, draw_edges=draw_edges)
+        weights = [v * edge_width_adjust for v in self.transitions.values()]
+        nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions.keys()),
+                               width=weights, edge_color='r')
+
+#%%
