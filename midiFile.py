@@ -6,6 +6,7 @@ class MidiFile:
         self.time_signatures = self._get_time_signatures()
         self.tempos = self._get_tempos()
         self.measures = self._get_measures()
+        self.current_ticks_per_measure
     
     def _get_time_signatures(self) -> list:
         time_signatures = []
@@ -26,33 +27,15 @@ class MidiFile:
         return tempos
     
     
-    # Function to get the length of a measure in seconds
-    def _measure_length_in_seconds(self, numerator, tempo):
-    
-        # Calculate beats per minute (BPM)
-        bpm = 60000000 / tempo
-        
-        # Calculate beats per measure
-        beats_per_measure = numerator
-        
-        # Calculate duration of one beat in seconds
-        beat_duration_seconds = 60 / bpm
-        
-        # Calculate length of one measure in seconds
-        measure_length_seconds = beats_per_measure * beat_duration_seconds
-        
-        return measure_length_seconds
-    
-    
-    def ticks_per_measure(self, ticks_per_beat, numerator, denominator):
+    def _ticks_per_measure(self, ticks_per_beat, numerator, denominator):
         beats_per_measure = numerator
         beat_length = 4 / denominator  # 4 is the default whole note length in MIDI
         return ticks_per_beat * beats_per_measure * beat_length
     
     
-    def get_measures(self):
+    def _get_measures(self):
         ticks_per_beat = self.midi_file.ticks_per_beat
-        current_ticks_per_measure = self.ticks_per_measure(ticks_per_beat, 4, 4)  # Default to 4/4 time signature
+        self.current_ticks_per_measure = self._ticks_per_measure(ticks_per_beat, 4, 4)  # Default to 4/4 time signature
         current_tick = 0
         measures = []
         current_measure = []
@@ -63,19 +46,20 @@ class MidiFile:
                     if msg.type == 'time_signature':
                         numerator = msg.numerator
                         denominator = msg.denominator
-                        current_ticks_per_measure = self.ticks_per_measure(ticks_per_beat, numerator, denominator)
+                        self.current_ticks_per_measure = self._ticks_per_measure(ticks_per_beat, numerator, denominator)
                     elif msg.type == 'set_tempo':
                         tempo = msg.tempo
                         # Tempo changes could be handled here if needed, but are usually not necessary for measure splitting
+                elif msg.type != 'note_on' and msg.type != 'note_off': continue
                 else:
                     current_measure.append(msg)
                 
                 current_tick += msg.time
                 
-                if current_tick >= current_ticks_per_measure:
+                if current_tick >= self.current_ticks_per_measure:
                     measures.append(current_measure)
                     current_measure = []
-                    current_tick -= current_ticks_per_measure  # Carry over the extra ticks to the next measure
+                    current_tick -= self.current_ticks_per_measure  # Carry over the extra ticks to the next measure
             
             if current_measure:
                 measures.append(current_measure)
