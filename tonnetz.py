@@ -1,8 +1,12 @@
 from typing import List, Tuple, Optional, Dict, Set
+import mido
 import networkx as nx
 import math
 from math import cos, sin, pi
+import utils
 from utils import NOTE_LOOKUP, num_to_note
+import os
+import matplotlib.pyplot as plt
 
 from overrides import overrides
 
@@ -67,10 +71,14 @@ def dist(fromCoord, toCoord, pos):
 DIST_THRESH = 4
 WIDTH_ADJUST = 10
 
-class TonnetzSong(Tonnetz):
-    def __init__(self, *args, **kwargs):
+
+class TonnetzTrack(Tonnetz):
+    instrument: str
+
+    def __init__(self, instrument=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.transitions: Dict[Tuple[Coord, Coord], float] = {}
+        self.instrument = instrument
 
     def analyze(self, note_sequence: List[int]):
         self.transitions = {}
@@ -101,3 +109,4 @@ class TonnetzSong(Tonnetz):
         weights = [v * edge_width_adjust for v in self.transitions.values()]
         nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions.keys()),
                                width=weights, edge_color='r', ax=ax)
+
