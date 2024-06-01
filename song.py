@@ -6,6 +6,7 @@ from tonnetz import TonnetzTrack
 from typing import List, Optional, Dict, Tuple
 import os
 from matplotlib import pyplot as plt
+import pickle
 
 # One note at a time
 class SimpleSong:
@@ -34,22 +35,25 @@ class AnalyzedSong:
     path: str
 
     tracks: List[TonnetzTrack] = []
-    midi_file: mido.MidiFile
+    # midi_file: mido.MidiFile
 
     def __init__(self, path=None):
         if path is None:
             return
-        self.load_song(path)
+        if path.endswith(".mid"):
+            self.load_song(path)
+        else:
+            self.load_pickle(path)
 
     def load_song(self, path):
         if not os.path.exists(path):
             path = os.path.join(utils.DATA_ROOT, path)
-        self.midi_file = mido.MidiFile(path, clip=True)
+        midi_file = mido.MidiFile(path, clip=True)
         self.path = path
         self.name = os.path.splitext(os.path.basename(path))[0]
         self.artist = os.path.basename(os.path.dirname(path))
 
-        channels, instruments = utils.mido_to_notes_and_instr(self.midi_file)
+        channels, instruments = utils.mido_to_notes_and_instr(midi_file)
 
         for channel, instr in zip(channels, instruments):
             if len(channel) == 0: continue
@@ -62,7 +66,7 @@ class AnalyzedSong:
         yplots = 3
 
         if output_file is None:
-            output_file = os.path.join(utils.OUTPUT_ROOT, "tonnetzImages", f"{self.artist}-{self.name}-tonnetz.png")
+            output_file = os.path.join(utils.OUTPUT_ROOT, "tonnetzImages", f"{self.to_song_id()}-tonnetz.png")
 
         fig, axes = plt.subplots(xplots, yplots, figsize=(20, 20))
 
@@ -85,3 +89,22 @@ class AnalyzedSong:
         if show_image:
             plt.show()
         plt.close(fig)
+
+    def to_song_id(self):
+        return f"{self.artist}-{self.name}"
+
+    def save_pickle(self, output_path=None):
+        if output_path is None:
+            os.makedirs(os.path.join(utils.OUTPUT_ROOT, "songPickles"), exist_ok=True)
+            output_path = os.path.join(utils.OUTPUT_ROOT, "songPickles", f"{self.to_song_id()}.pickle")
+        with open(output_path, 'wb') as handle:
+            pickle.dump(self.__dict__, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load_pickle(self, song_id):
+        song_id = f"{song_id}.pickle"
+        if not os.path.exists(song_id):
+            song_id = os.path.join(utils.OUTPUT_ROOT, "songPickles", song_id)
+        with open(song_id, 'rb') as handle:
+            tmp = pickle.load(handle)
+        self.__dict__.update(tmp)
+
