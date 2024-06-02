@@ -144,3 +144,75 @@ class TonnetzTrack(Tonnetz):
         nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions.keys()),
                                width=weights, edge_color='r', ax=ax)
 
+
+class TonnetzQuarterTrack(Tonnetz):
+    instrument: str
+
+    def __init__(self, instrument=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.transitions: List[Dict[Tuple[Coord, Coord], float]] = []
+        self.instrument = instrument
+
+    def _add_transition(self, prev, note, weight, qnote):
+        if qnote >= len(self.transitions): raise ValueError(f"Quarter {qnote}")
+        if note not in self.note_map: return
+        if prev not in self.note_map: return
+
+        for prevCoord in self.note_map[prev]:
+            closest = None
+            closest_dist = None
+            for currCoord in self.note_map[note]:
+                d = dist(prevCoord, currCoord, self.pos)
+                if closest is None or d < closest_dist:
+                    closest = currCoord
+                    closest_dist = d
+            if closest_dist < DIST_THRESH:
+                transition = (prevCoord, closest)
+                if transition not in self.transitions[qnote]:
+                    self.transitions[qnote][transition] = 0
+                self.transitions[qnote][transition] += weight
+
+    def analyze(self, intervals: np.ndarray, ticks_per_measure, beats_per_measure=4):
+        # intervals: [note, start, stop]
+        self.transitions = [{} for _ in range(beats_per_measure)]
+
+        prev_notes = []
+        curr_notes = []
+        curr_start = 0
+
+        for i in range(intervals.shape[0]):
+            if intervals[i,1] != curr_start:
+                trans = _compute_transitions(prev_notes, curr_notes)
+                for t in trans:
+                    qnote = (curr_start // ticks_per_measure) % beats_per_measure
+                    self._add_transition(t[0], t[1], (1/len(trans)) / intervals.shape[0], qnote)
+                prev_notes = curr_notes
+                curr_notes = []
+
+            curr_start = intervals[i, 1]
+            curr_notes.append(intervals[i, 0])
+
+
+    @overrides
+    def draw(self, draw_edges=False, edge_width_adjust=WIDTH_ADJUST, ax=None, draw_quarters=True):
+        Tonnetz.draw(self, draw_edges=draw_edges, ax=ax)
+        if not draw_quarters:
+            # Combine all transitions
+            total_trans = {}
+            for qtrans in self.transitions:
+                for trans in qtrans:
+                    if trans not in total_trans:
+                        total_trans[trans] = qtrans[trans]
+                    else:
+                        total_trans[trans] += qtrans[trans]
+            weights = [v * edge_width_adjust for v in total_trans.values()]
+            nx.draw_networkx_edges(self.G, self.pos, edgelist=list(total_trans.keys()),
+                                   width=weights, edge_color='r', ax=ax)
+            return
+
+        colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
+        for qnote in range(len(self.transitions) - 1, -1, -1):
+            weights = [v * edge_width_adjust * 4 for v in self.transitions[qnote].values()]
+            nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions[qnote].keys()),
+                                   width=weights, edge_color=colors[qnote], ax=ax)
+

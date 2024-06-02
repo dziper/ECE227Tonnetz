@@ -1,8 +1,10 @@
 import csv
+
+import midiFile
 import utils
 from utils import num_to_note
 import mido
-from tonnetz import TonnetzTrack
+from tonnetz import TonnetzTrack, TonnetzQuarterTrack
 from typing import List, Optional, Dict, Tuple
 import os
 from matplotlib import pyplot as plt
@@ -35,7 +37,7 @@ class AnalyzedSong:
     name: str
     artist: str
     path: str
-    tracks: List[TonnetzTrack]
+    tracks: List[TonnetzQuarterTrack]
     # midi_file: mido.MidiFile
 
     def __init__(self, path=None):
@@ -73,6 +75,10 @@ class AnalyzedSong:
         pm = pretty_midi.PrettyMIDI(path)
         pm.remove_invalid_notes()
 
+        self.ticks_per_beat = pm.resolution
+        self.beats_per_measure = pm.time_signature_changes[0].numerator
+        self.ticks_per_measure = self.beats_per_measure * self.ticks_per_beat
+
         self.path = path
 
         for instrument in pm.instruments:
@@ -82,12 +88,12 @@ class AnalyzedSong:
             notes = notes.reshape(-1, 1)
             note_interval = np.concatenate((notes, intervals), 1)
 
-            ts = TonnetzTrack(instrument=utils.GM_INSTRUMENT_NAMES[instrument.program])
-            ts.analyzeV2(note_interval)
+            ts = TonnetzQuarterTrack(instrument=utils.GM_INSTRUMENT_NAMES[instrument.program])
+            ts.analyze(note_interval, self.ticks_per_measure, self.beats_per_measure)
             self.tracks.append(ts)
 
 
-    def draw(self, output_file=None, save_file=True, show_image=False):
+    def draw(self, output_file=None, save_file=True, show_image=False, draw_quarters=True):
         xplots = 3
         yplots = 3
 
@@ -100,7 +106,7 @@ class AnalyzedSong:
         for track in self.tracks:
             if idx >= xplots * yplots: break
             ax = axes[idx // xplots, idx % yplots]
-            track.draw(edge_width_adjust=40, ax=ax)
+            track.draw(edge_width_adjust=40, ax=ax, draw_quarters=draw_quarters)
             ax.set_title(f"{track.instrument}")
             idx += 1
 
