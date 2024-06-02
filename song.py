@@ -7,6 +7,8 @@ from typing import List, Optional, Dict, Tuple
 import os
 from matplotlib import pyplot as plt
 import pickle
+import pretty_midi
+import numpy as np
 
 # One note at a time
 class SimpleSong:
@@ -33,15 +35,19 @@ class AnalyzedSong:
     name: str
     artist: str
     path: str
-
-    tracks: List[TonnetzTrack] = []
+    tracks: List[TonnetzTrack]
     # midi_file: mido.MidiFile
 
     def __init__(self, path=None):
         if path is None:
             return
+
+        self.name = os.path.splitext(os.path.basename(path))[0]
+        self.artist = os.path.basename(os.path.dirname(path))
+        self.tracks = []
+
         if path.endswith(".mid"):
-            self.load_song(path)
+            self.load_songV2(path)
         else:
             self.load_pickle(path)
 
@@ -60,6 +66,26 @@ class AnalyzedSong:
             ts = TonnetzTrack(instrument=instr)
             ts.analyze(channel)
             self.tracks.append(ts)
+
+    def load_songV2(self, path):
+        if not os.path.exists(path):
+            path = os.path.join(utils.DATA_ROOT, path)
+        pm = pretty_midi.PrettyMIDI(path)
+        pm.remove_invalid_notes()
+
+        self.path = path
+
+        for instrument in pm.instruments:
+            if instrument.is_drum: continue
+            intervals = np.array([(pm.time_to_tick(note.start), pm.time_to_tick(note.end)) for note in instrument.notes])
+            notes = np.array([note.pitch for note in instrument.notes])
+            notes = notes.reshape(-1, 1)
+            note_interval = np.concatenate((notes, intervals), 1)
+
+            ts = TonnetzTrack(instrument=utils.GM_INSTRUMENT_NAMES[instrument.program])
+            ts.analyzeV2(note_interval)
+            self.tracks.append(ts)
+
 
     def draw(self, output_file=None, save_file=True, show_image=False):
         xplots = 3

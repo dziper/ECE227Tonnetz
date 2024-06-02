@@ -7,6 +7,7 @@ import utils
 from utils import NOTE_LOOKUP, num_to_note
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 
 from overrides import overrides
 
@@ -72,6 +73,15 @@ DIST_THRESH = 4
 WIDTH_ADJUST = 10
 
 
+def _compute_transitions(prev_notes, curr_notes):
+    transitions = []
+    for p in prev_notes:
+        for c in curr_notes:
+            if p == c: continue
+            transitions.append((p, c))
+    return transitions
+
+
 class TonnetzTrack(Tonnetz):
     instrument: str
 
@@ -87,21 +97,45 @@ class TonnetzTrack(Tonnetz):
             if prev is None or note not in self.note_map or prev not in self.note_map:
                 prev = note
                 continue
-
-            for prevCoord in self.note_map[prev]:
-                closest = None
-                closest_dist = None
-                for currCoord in self.note_map[note]:
-                    d = dist(prevCoord, currCoord, self.pos)
-                    if closest is None or d < closest_dist:
-                        closest = currCoord
-                        closest_dist = d
-                if closest_dist < DIST_THRESH:
-                    transition = (prevCoord, closest)
-                    if transition not in self.transitions:
-                        self.transitions[transition] = 0
-                    self.transitions[transition] += 1 / len(note_sequence)
+            self._add_transition(prev, note, 1/len(note_sequence))
             prev = note
+
+    def _add_transition(self, prev, note, weight):
+        if note not in self.note_map: return
+        if prev not in self.note_map: return
+
+        for prevCoord in self.note_map[prev]:
+            closest = None
+            closest_dist = None
+            for currCoord in self.note_map[note]:
+                d = dist(prevCoord, currCoord, self.pos)
+                if closest is None or d < closest_dist:
+                    closest = currCoord
+                    closest_dist = d
+            if closest_dist < DIST_THRESH:
+                transition = (prevCoord, closest)
+                if transition not in self.transitions:
+                    self.transitions[transition] = 0
+                self.transitions[transition] += weight
+
+    def analyzeV2(self, intervals: np.ndarray):
+        # intervals: [note, start, stop]
+
+        prev_notes = []
+        curr_notes = []
+        curr_start = 0
+
+        for i in range(intervals.shape[0]):
+            if intervals[i,1] != curr_start:
+                trans = _compute_transitions(prev_notes, curr_notes)
+                for t in trans:
+                    self._add_transition(t[0], t[1], (1/len(trans)) / intervals.shape[0])
+                prev_notes = curr_notes
+                curr_notes = []
+
+            curr_start = intervals[i, 1]
+            curr_notes.append(intervals[i, 0])
+
 
     @overrides
     def draw(self, draw_edges=False, edge_width_adjust=WIDTH_ADJUST, ax=None):
