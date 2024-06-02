@@ -71,6 +71,8 @@ def dist(fromCoord, toCoord, pos):
 
 DIST_THRESH = 4
 WIDTH_ADJUST = 10
+MAX_EDGE_WIDTH = 4
+MIN_TRANSITIONS = 4
 
 
 def _compute_transitions(prev_notes, curr_notes):
@@ -191,6 +193,7 @@ class TonnetzQuarterTrack(Tonnetz):
 
             curr_start = intervals[i, 1]
             curr_notes.append(intervals[i, 0])
+        return not (all(len(qt) < MIN_TRANSITIONS for qt in self.transitions))
 
 
     @overrides
@@ -205,14 +208,14 @@ class TonnetzQuarterTrack(Tonnetz):
                         total_trans[trans] = qtrans[trans]
                     else:
                         total_trans[trans] += qtrans[trans]
-            weights = [v * edge_width_adjust for v in total_trans.values()]
+            weights = [min(MAX_EDGE_WIDTH, v * edge_width_adjust) for v in total_trans.values()]
             nx.draw_networkx_edges(self.G, self.pos, edgelist=list(total_trans.keys()),
                                    width=weights, edge_color='r', ax=ax)
             return
 
         colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
         for qnote in range(len(self.transitions) - 1, -1, -1):
-            weights = [v * edge_width_adjust * 4 for v in self.transitions[qnote].values()]
+            weights = [min(MAX_EDGE_WIDTH, v * edge_width_adjust * 4) for v in self.transitions[qnote].values()]
             nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions[qnote].keys()),
                                    width=weights, edge_color=colors[qnote], ax=ax)
 

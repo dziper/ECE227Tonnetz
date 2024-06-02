@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 import pickle
 import pretty_midi
 import numpy as np
+import math
 
 # One note at a time
 class SimpleSong:
@@ -32,7 +33,7 @@ class SimpleSong:
         return repr([num_to_note(n) for n in self.notes])
 
 
-# Collection of TonnetzTracks that represent all of the tracks in a MIDI Song
+# Collection of TonnetzTracks that represent all the tracks in a MIDI Song
 class AnalyzedSong:
     name: str
     artist: str
@@ -49,27 +50,11 @@ class AnalyzedSong:
         self.tracks = []
 
         if path.endswith(".mid"):
-            self.load_songV2(path)
+            self.load_song(path)
         else:
             self.load_pickle(path)
 
     def load_song(self, path):
-        if not os.path.exists(path):
-            path = os.path.join(utils.DATA_ROOT, path)
-        midi_file = mido.MidiFile(path, clip=True)
-        self.path = path
-        self.name = os.path.splitext(os.path.basename(path))[0]
-        self.artist = os.path.basename(os.path.dirname(path))
-
-        channels, instruments = utils.mido_to_notes_and_instr(midi_file)
-
-        for channel, instr in zip(channels, instruments):
-            if len(channel) == 0: continue
-            ts = TonnetzTrack(instrument=instr)
-            ts.analyze(channel)
-            self.tracks.append(ts)
-
-    def load_songV2(self, path):
         if not os.path.exists(path):
             path = os.path.join(utils.DATA_ROOT, path)
         pm = pretty_midi.PrettyMIDI(path)
@@ -89,8 +74,8 @@ class AnalyzedSong:
             note_interval = np.concatenate((notes, intervals), 1)
 
             ts = TonnetzQuarterTrack(instrument=utils.GM_INSTRUMENT_NAMES[instrument.program])
-            ts.analyze(note_interval, self.ticks_per_measure, self.beats_per_measure)
-            self.tracks.append(ts)
+            if ts.analyze(note_interval, self.ticks_per_measure, self.beats_per_measure):
+                self.tracks.append(ts)
 
 
     def draw(self, output_file=None, save_file=True, show_image=False, draw_quarters=True):
@@ -133,7 +118,8 @@ class AnalyzedSong:
             pickle.dump(self.__dict__, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_pickle(self, song_id):
-        song_id = f"{song_id}.pickle"
+        if not song_id.endswith(".pickle"):
+            song_id = f"{song_id}.pickle"
         if not os.path.exists(song_id):
             song_id = os.path.join(utils.OUTPUT_ROOT, "songPickles", song_id)
         with open(song_id, 'rb') as handle:
