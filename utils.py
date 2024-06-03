@@ -2,6 +2,8 @@ import math
 import mido
 import py_midicsv as pm
 import csv
+import networkx as nx
+import numpy as np
 
 NOTE_LOOKUP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -128,3 +130,38 @@ def mido_to_notes_and_instr(midi: mido.MidiFile):
 
     return channels, instrs
 
+
+
+### Graph similarity ###
+### Maybe we can see the two matrices as y_pred and y_true as in machine learning, and use sklearn to get the score?
+
+# Compute the Jaccard similarity for edges
+def jaccard_similarity_edge(G1, G2):
+    edges_G1 = set(G1.edges())
+    edges_G2 = set(G2.edges())
+    intersection = edges_G1.intersection(edges_G2)
+    union = edges_G1.union(edges_G2)
+    return len(intersection) / len(union)
+
+# Compute the cosine similarity between the Laplacian matrices of the graphs
+def cos_similarity_laplacian(G1, G2):
+    # Laplacian Matrix
+    L1 = nx.laplacian_matrix(G1).todense()
+    L2 = nx.laplacian_matrix(G2).todense()
+    L1_flat = L1.flatten()
+    L2_flat = L2.flatten()
+    
+    # Cosine similarity of Laplacian matrices
+    return np.dot(L1_flat, L2_flat) / (np.linalg.norm(L1) * np.linalg.norm(L2))
+
+# Compute the cosine similarity between the Adjacency matrices of the graphs
+def cos_similarity_adj(G1, G2):
+    # Adjacency matrices
+    A1 = nx.adjacency_matrix(G1).todense()
+    A2 = nx.adjacency_matrix(G2).todense()
+    A1_flat = A1.flatten()
+    A2_flat = A2.flatten()
+    
+    # Compute cosine similarity
+    cosine_similarity = np.dot(A1_flat, A2_flat) / (np.linalg.norm(A1_flat) * np.linalg.norm(A2_flat))
+    return cosine_similarity

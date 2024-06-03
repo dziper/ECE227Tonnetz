@@ -26,6 +26,16 @@ class Tonnetz:
         pos = nx.get_node_attributes(self.G, "pos")
         self.pos = rotate_positions(pos, 30)
         self._compute_notes(intervals, start_note)
+        
+        ### Matrics
+        self.adj_maxtrix = nx.adjacency_matrix(self.G).todense()
+        self.degree_matrix = np.diag([d for n, d in self.G.degree()])
+        self.lap_matrix = nx.laplacian_matrix(self.G).todense()
+        
+        self.degree_centrality = nx.degree_centrality(self.G)
+        self.between_centrality = nx.betweenness_centrality(self.G)
+        self.closeness_centrality = nx.closeness_centrality(self.G)
+        self.eigenvector_centrality = nx.eigenvector_centrality(self.G)
 
     def draw(self, draw_edges=True, ax=None):
         if draw_edges:

@@ -1,4 +1,4 @@
-import mido
+import mido # type: ignore
 
 class MidiFile:
     def __init__(self, midi_file: str):
