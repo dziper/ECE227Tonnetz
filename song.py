@@ -126,3 +126,11 @@ class AnalyzedSong:
             tmp = pickle.load(handle)
         self.__dict__.update(tmp)
 
+
+def analyze_artist(artist, draw=False):
+    def callback(artist, song_name):
+        anSong = AnalyzedSong(os.path.join(artist, song_name))
+        anSong.draw(save_file=True, show_image=draw)
+        anSong.save_pickle()
+
+    return utils.for_song_in_artist(artist, callback)

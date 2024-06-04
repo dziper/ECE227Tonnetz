@@ -4,6 +4,8 @@ import py_midicsv as pm
 import csv
 import networkx as nx
 import numpy as np
+from tqdm import tqdm
+import os
 
 NOTE_LOOKUP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -165,3 +167,34 @@ def cos_similarity_adj(G1, G2):
     # Compute cosine similarity
     cosine_similarity = np.dot(A1_flat, A2_flat) / (np.linalg.norm(A1_flat) * np.linalg.norm(A2_flat))
     return cosine_similarity
+
+
+DIST_LOOKUP = {
+    (3, 4, 5): [0, 2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2]
+}
+
+def tonnetz_dist(from_note, to_note, intervals=(3, 4, 5)):
+    if intervals in DIST_LOOKUP:
+        diff = abs(to_note - from_note)
+        octave_diff = diff // 12
+        # Manhattan distance for 3,4,5
+        return octave_diff * 3 + DIST_LOOKUP[intervals][diff % 12]
+    else:
+        raise ValueError(intervals)
+
+
+def for_song_in_artist(artist, callback, skip_digits=True, tqdm_disable=False, report_errors=True):
+    song_dir = os.path.join(DATA_ROOT, artist)
+    output_dir = os.path.join(OUTPUT_ROOT, artist)
+    os.makedirs(output_dir, exist_ok=True)
+
+    for song_name in tqdm(sorted(os.listdir(song_dir)), disable=tqdm_disable):
+        if skip_digits and any(char.isdigit() for char in song_name):
+            # Skip repeated versions of the song
+            continue
+        try:
+            callback(artist, song_name)
+        except Exception as e:
+            if report_errors:
+                print(f"{song_name}: {e}")
+

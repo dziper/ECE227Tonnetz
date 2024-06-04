@@ -157,18 +157,25 @@ class TonnetzTrack(Tonnetz):
                                width=weights, edge_color='r', ax=ax)
 
 
+NoteTransitions = Dict[Tuple[int, int], float]
+
 class TonnetzQuarterTrack(Tonnetz):
     instrument: str
 
     def __init__(self, instrument=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.transitions: List[Dict[Tuple[Coord, Coord], float]] = []
+        self.note_number_transitions: List[NoteTransitions] = []
         self.instrument = instrument
 
     def _add_transition(self, prev, note, weight, qnote):
         if qnote >= len(self.transitions): raise ValueError(f"Quarter {qnote}")
         if note not in self.note_map: return
         if prev not in self.note_map: return
+
+        if (prev, note) not in self.note_number_transitions[qnote]:
+            self.note_number_transitions[qnote][(prev, note)] = 0
+        self.note_number_transitions[qnote][(prev, note)] += weight
 
         for prevCoord in self.note_map[prev]:
             closest = None
@@ -187,6 +194,7 @@ class TonnetzQuarterTrack(Tonnetz):
     def analyze(self, intervals: np.ndarray, ticks_per_measure, beats_per_measure=4):
         # intervals: [note, start, stop]
         self.transitions = [{} for _ in range(beats_per_measure)]
+        self.note_number_transitions = [{} for _ in range(beats_per_measure)]
 
         prev_notes = []
         curr_notes = []
