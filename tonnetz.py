@@ -8,6 +8,7 @@ from utils import NOTE_LOOKUP, num_to_note
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from enum import Enum
 
 from overrides import overrides
 
@@ -26,16 +27,6 @@ class Tonnetz:
         pos = nx.get_node_attributes(self.G, "pos")
         self.pos = rotate_positions(pos, 30)
         self._compute_notes(intervals, start_note)
-        
-        # ### Matrics
-        # self.adj_maxtrix = nx.adjacency_matrix(self.G).todense()
-        # self.degree_matrix = np.diag([d for n, d in self.G.degree()])
-        # self.lap_matrix = nx.laplacian_matrix(self.G).todense()
-        #
-        # self.degree_centrality = nx.degree_centrality(self.G)
-        # self.between_centrality = nx.betweenness_centrality(self.G)
-        # self.closeness_centrality = nx.closeness_centrality(self.G)
-        # self.eigenvector_centrality = nx.eigenvector_centrality(self.G)
 
     def draw(self, draw_edges=True, ax=None):
         if draw_edges:
@@ -159,9 +150,21 @@ class TonnetzTrack(Tonnetz):
 
 NoteTransitions = Dict[Tuple[int, int], float]
 
+class MatrixType(Enum):
+    ADJACENCY = 1
+    DEGREE = 2
+    LAPLACIAN = 3
+    
+class CentralityType(Enum):
+    DEGREE = 1
+    BETWEENESS = 2
+    CLOSENESS = 3
+    EIGENVECTOR = 4
+    
+
 class TonnetzQuarterTrack(Tonnetz):
     instrument: str
-
+    
     def __init__(self, instrument=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.transitions: List[Dict[Tuple[Coord, Coord], float]] = []
@@ -211,6 +214,7 @@ class TonnetzQuarterTrack(Tonnetz):
 
             curr_start = intervals[i, 1]
             curr_notes.append(intervals[i, 0])
+        
         return not (all(len(qt) < MIN_TRANSITIONS for qt in self.transitions))
 
 
@@ -237,3 +241,40 @@ class TonnetzQuarterTrack(Tonnetz):
             nx.draw_networkx_edges(self.G, self.pos, edgelist=list(self.transitions[qnote].keys()),
                                    width=weights, edge_color=colors[qnote], ax=ax)
 
+
+    def get_matrices(self, matrix_type: MatrixType) -> list:
+        '''
+        Get the matrix of each quarter transition in self.transitions
+        '''
+        matirces = []
+        for trans in self.transitions:
+            tempG = nx.Graph()
+            tempG.add_nodes_from(self.G.nodes)
+            tempG.add_weighted_edges_from([(n0, n1, w) for (n0, n1), w in trans.items()])
+            if matrix_type == MatrixType.ADJACENCY:
+                matirces.append(nx.adjacency_matrix(tempG).todense())
+            elif matrix_type == MatrixType.DEGREE:
+                matirces.append(np.diag([d for n, d in tempG.degree()]))
+            elif matrix_type == MatrixType.LAPLACIAN:
+                matirces.append(nx.laplacian_matrix(tempG).todense())    
+        return matirces
+    
+    
+    def get_centralities(self, centrality_type: CentralityType):
+        '''
+        Get the centrality of each quarter transition in self.transitions
+        '''
+        centralities = []
+        for trans in self.transitions:
+            tempG = nx.Graph()
+            tempG.add_nodes_from(self.G.nodes)
+            tempG.add_weighted_edges_from([(n0, n1, w) for (n0, n1), w in trans.items()])
+            if centrality_type == CentralityType.DEGREE:
+                centralities.append(nx.degree_centrality(tempG))
+            elif centrality_type == CentralityType.CLOSENESS:
+                centralities.append(nx.closeness_centrality(tempG))
+            elif centrality_type == CentralityType.BETWEENESS:
+                centralities.append(nx.betweenness_centrality(tempG))
+            elif centrality_type == CentralityType.EIGENVECTOR:
+                centralities.append(nx.eigenvector_centrality(tempG))
+        return centralities    
