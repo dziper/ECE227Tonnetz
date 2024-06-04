@@ -16,7 +16,7 @@ from tonnetz import MatrixType
 from enum import Enum
 
 
-class CompairMethod(Enum):
+class CompareMethod(Enum):
     LAP_COSINE_SIM = 1,
     EDGES_JACCARD_SIM = 2
 
@@ -171,7 +171,7 @@ class AnalyzedSong:
         return sim_score
 
     
-    def first_N_tracks_sim_score(self, aSong: 'AnalyzedSong', compair_method: CompairMethod, N: int):
+    def first_N_tracks_sim_score(self, aSong: 'AnalyzedSong', compare_method: CompareMethod, N: int):
         '''
         Return the summation of the similarity of the first N tracks between self and aSong. Raise error when the num of tracks is less than N.
         '''
@@ -179,9 +179,9 @@ class AnalyzedSong:
         assert(len(aSong.tracks) >= N), f"\'{aSong.artist} - {aSong.name}\' only has {len(aSong.tracks)} tracks, but require {N} tracks."
         score = 0
         for i in range(0, N):
-            if compair_method == CompairMethod.LAP_COSINE_SIM:
+            if compare_method == CompareMethod.LAP_COSINE_SIM:
                 score += self.laplacian_cos_similarity_between_tracks(self.tracks[i], aSong.tracks[i])
-            elif compair_method == CompairMethod.EDGES_JACCARD_SIM:
+            elif compare_method == CompareMethod.EDGES_JACCARD_SIM:
                 score += self.edges_jaccard_sim_between_tracks(self.tracks[i], aSong.tracks[i])
         return score
             
