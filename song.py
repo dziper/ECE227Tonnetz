@@ -12,6 +12,13 @@ import pickle
 import pretty_midi
 import numpy as np
 import math
+from tonnetz import MatrixType
+from enum import Enum
+
+
+class CompairMethod(Enum):
+    LAP_COSINE_SIM = 1,
+    EDGES_JACCARD_SIM = 2
 
 # One note at a time
 class SimpleSong:
@@ -125,7 +132,51 @@ class AnalyzedSong:
         with open(song_id, 'rb') as handle:
             tmp = pickle.load(handle)
         self.__dict__.update(tmp)
+        
+        
+    def edges_jaccard_sim_between_tracks(self, track1: TonnetzQuarterTrack, track2: TonnetzQuarterTrack):
+        assert(len(track1.transitions) == len(track2.transitions)), \
+            f"len of track1.transitions {len(track1.transitions)} != len of track2.transitions {len(track2.transitions)}"
+            
+        sim_score = 0
+        for i in range(0, len(track1.transitions)):
+            t1_qtrans = set(track1.transitions[i].keys())
+            t2_qtrans = set(track2.transitions[i].keys())
+            intersection = t1_qtrans.intersection(t2_qtrans)
+            union = t1_qtrans.union(t2_qtrans)
+            sim_score += len(intersection) / len(union)
+        return sim_score
 
+
+    # Compute the cosine similarity between the Laplacian matrices
+    def laplacian_cos_similarity_bteween_tracks(self, track1: TonnetzQuarterTrack, track2: TonnetzQuarterTrack):
+        assert(len(track1.transitions) == len(track2.transitions)), \
+            f"len of track1.transitions {len(track1.transitions)} != len of track2.transitions {len(track2.transitions)}"
+        
+        sim_score = 0
+        # Flatten the Laplacian Matrix
+        L1 = track1.get_matrices(MatrixType.LAPLACIAN)
+        L2 = track2.get_matrices(MatrixType.LAPLACIAN)
+        
+        for i in range(0, len(track1.transitions)):
+            L1_flat = L1[i].flatten()
+            L2_flat = L2[i].flatten()
+            sim_score += np.dot(L1_flat, L2_flat) / (np.linalg.norm(L1) * np.linalg.norm(L2))
+        return sim_score
+
+    
+    def first_N_tracks_sim_score(self, aSong, compair_method: CompairMethod, N: int):
+        assert(len(self.tracks) >= N), f"\'{self.artist} - {self.name}\' only has {len(self.tracks)} tracks, but require {N} tracks."
+        assert(len(aSong.tracks) >= N), f"\'{aSong.artist} - {aSong.name}\' only has {len(aSong.tracks)} tracks, but require {N} tracks."
+        score = 0
+        for i in range(0, N):
+            if compair_method == CompairMethod.LAP_COSINE_SIM:
+                score += self.laplacian_cos_similarity_bteween_tracks(self.tracks[i], aSong.tracks[i])
+            elif compair_method == CompairMethod.EDGES_JACCARD_SIM:
+                score += self.edges_jaccard_sim_between_tracks(self.tracks[i], aSong.tracks[i])
+        return score
+            
+        
 
 def analyze_artist(artist, draw=False):
     def callback(artist, song_name):
