@@ -149,7 +149,7 @@ class AnalyzedSong:
 
 
     # Compute the cosine similarity between the Laplacian matrices
-    def laplacian_cos_similarity_bteween_tracks(self, track1: TonnetzQuarterTrack, track2: TonnetzQuarterTrack):
+    def laplacian_cos_similarity_between_tracks(self, track1: TonnetzQuarterTrack, track2: TonnetzQuarterTrack):
         assert(len(track1.transitions) == len(track2.transitions)), \
             f"len of track1.transitions {len(track1.transitions)} != len of track2.transitions {len(track2.transitions)}"
         
@@ -171,7 +171,7 @@ class AnalyzedSong:
         score = 0
         for i in range(0, N):
             if compair_method == CompairMethod.LAP_COSINE_SIM:
-                score += self.laplacian_cos_similarity_bteween_tracks(self.tracks[i], aSong.tracks[i])
+                score += self.laplacian_cos_similarity_between_tracks(self.tracks[i], aSong.tracks[i])
             elif compair_method == CompairMethod.EDGES_JACCARD_SIM:
                 score += self.edges_jaccard_sim_between_tracks(self.tracks[i], aSong.tracks[i])
         return score
