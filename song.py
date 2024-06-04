@@ -135,6 +135,9 @@ class AnalyzedSong:
         
         
     def edges_jaccard_sim_between_tracks(self, track1: TonnetzQuarterTrack, track2: TonnetzQuarterTrack):
+        '''
+        Return the summation of the similarity of the four quarter transitions in track1 and track2
+        '''
         assert(len(track1.transitions) == len(track2.transitions)), \
             f"len of track1.transitions {len(track1.transitions)} != len of track2.transitions {len(track2.transitions)}"
             
@@ -150,6 +153,9 @@ class AnalyzedSong:
 
     # Compute the cosine similarity between the Laplacian matrices
     def laplacian_cos_similarity_between_tracks(self, track1: TonnetzQuarterTrack, track2: TonnetzQuarterTrack):
+        '''
+        Return the summation of the similarity of the four quarter transitions in track1 and track2
+        '''
         assert(len(track1.transitions) == len(track2.transitions)), \
             f"len of track1.transitions {len(track1.transitions)} != len of track2.transitions {len(track2.transitions)}"
         
@@ -165,7 +171,10 @@ class AnalyzedSong:
         return sim_score
 
     
-    def first_N_tracks_sim_score(self, aSong, compair_method: CompairMethod, N: int):
+    def first_N_tracks_sim_score(self, aSong: 'AnalyzedSong', compair_method: CompairMethod, N: int):
+        '''
+        Return the summation of the similarity of the first N tracks between self and aSong. Raise error when the num of tracks is less than N.
+        '''
         assert(len(self.tracks) >= N), f"\'{self.artist} - {self.name}\' only has {len(self.tracks)} tracks, but require {N} tracks."
         assert(len(aSong.tracks) >= N), f"\'{aSong.artist} - {aSong.name}\' only has {len(aSong.tracks)} tracks, but require {N} tracks."
         score = 0

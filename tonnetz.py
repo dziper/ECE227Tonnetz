@@ -244,7 +244,7 @@ class TonnetzQuarterTrack(Tonnetz):
 
     def get_matrices(self, matrix_type: MatrixType) -> list:
         '''
-        Get the matrix of each quarter transition in self.transitions
+        Return the matrix of each quarter transition in self.transitions
         '''
         matirces = []
         for trans in self.transitions:
@@ -260,9 +260,9 @@ class TonnetzQuarterTrack(Tonnetz):
         return matirces
     
     
-    def get_centralities(self, centrality_type: CentralityType):
+    def get_centralities(self, centrality_type: CentralityType) -> list:
         '''
-        Get the centrality of each quarter transition in self.transitions
+        Return the centrality of each quarter transition in self.transitions
         '''
         centralities = []
         for trans in self.transitions:
