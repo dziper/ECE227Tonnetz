@@ -203,19 +203,32 @@ class TonnetzQuarterTrack(Tonnetz):
         curr_notes = []
         curr_start = 0
 
+        trans_per_qnote = np.zeros((beats_per_measure))
+
         for i in range(intervals.shape[0]):
             if intervals[i,1] != curr_start:
                 trans = _compute_transitions(prev_notes, curr_notes)
+                qnote = (curr_start // ticks_per_measure) % beats_per_measure
                 for t in trans:
-                    qnote = (curr_start // ticks_per_measure) % beats_per_measure
-                    self._add_transition(t[0], t[1], (1/len(trans)) / intervals.shape[0], qnote)
+                    self._add_transition(t[0], t[1], (1/len(trans)), qnote)
                 prev_notes = curr_notes
                 curr_notes = []
+                trans_per_qnote[qnote] += 1
 
             curr_start = intervals[i, 1]
             curr_notes.append(intervals[i, 0])
-        
+
+        self._adjust_transitions(trans_per_qnote)
+
         return not (all(len(qt) < MIN_TRANSITIONS for qt in self.transitions))
+
+
+    def _adjust_transitions(self, trans_per_qnote: np.ndarray):
+        for qnote, count in enumerate(trans_per_qnote):
+            for t in self.transitions[qnote]:
+                self.transitions[qnote][t] /= count
+            for t in self.note_number_transitions[qnote]:
+                self.note_number_transitions[qnote][t] /= count
 
 
     @overrides
