@@ -138,13 +138,13 @@ class AnalyzedSong:
         '''
         Return the summation of the similarity of the four quarter transitions in track1 and track2
         '''
-        assert(len(track1.transitions) == len(track2.transitions)), \
-            f"len of track1.transitions {len(track1.transitions)} != len of track2.transitions {len(track2.transitions)}"
+        assert(len(track1.note_number_transitions) == len(track2.note_number_transitions)), \
+            f"len of track1.transitions {len(track1.note_number_transitions)} != len of track2.transitions {len(track2.note_number_transitions)}"
             
         sim_score = 0
-        for i in range(0, len(track1.transitions)):
-            t1_qtrans = set(track1.transitions[i].keys())
-            t2_qtrans = set(track2.transitions[i].keys())
+        for i in range(0, len(track1.note_number_transitions)):
+            t1_qtrans = set(track1.note_number_transitions[i].keys())
+            t2_qtrans = set(track2.note_number_transitions[i].keys())
             intersection = t1_qtrans.intersection(t2_qtrans)
             union = t1_qtrans.union(t2_qtrans)
             sim_score += len(intersection) / len(union)
@@ -156,15 +156,15 @@ class AnalyzedSong:
         '''
         Return the summation of the similarity of the four quarter transitions in track1 and track2
         '''
-        assert(len(track1.transitions) == len(track2.transitions)), \
-            f"len of track1.transitions {len(track1.transitions)} != len of track2.transitions {len(track2.transitions)}"
+        assert(len(track1.note_number_transitions) == len(track2.note_number_transitions)), \
+            f"len of track1.transitions {len(track1.note_number_transitions)} != len of track2.transitions {len(track2.note_number_transitions)}"
         
         sim_score = 0
         # Flatten the Laplacian Matrix
         L1 = track1.get_matrices(MatrixType.LAPLACIAN)
         L2 = track2.get_matrices(MatrixType.LAPLACIAN)
         
-        for i in range(0, len(track1.transitions)):
+        for i in range(0, len(track1.note_number_transitions)):
             L1_flat = L1[i].flatten()
             L2_flat = L2[i].flatten()
             sim_score += np.dot(L1_flat, L2_flat) / (np.linalg.norm(L1) * np.linalg.norm(L2))
