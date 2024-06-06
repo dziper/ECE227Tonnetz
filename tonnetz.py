@@ -255,21 +255,28 @@ class TonnetzQuarterTrack(Tonnetz):
                                    width=weights, edge_color=colors[qnote], ax=ax)
 
 
+    def get_weighted_graphs(self) -> list:
+        graphs = []
+        for trans in self.transitions:
+            tempG = nx.Graph()
+            tempG.add_nodes_from(self.G.nodes)
+            tempG.add_weighted_edges_from([(n0, n1, w) for (n0, n1), w in trans.items()])
+            graphs.append(tempG)
+        return graphs
+
     def get_matrices(self, matrix_type: MatrixType) -> list:
         '''
         Return the matrix of each quarter transition in self.transitions
         '''
         matirces = []
-        for trans in self.transitions:
-            tempG = nx.Graph()
-            tempG.add_nodes_from(self.G.nodes)
-            tempG.add_weighted_edges_from([(n0, n1, w) for (n0, n1), w in trans.items()])
+        graphs = self.get_weighted_graphs()
+        for g in graphs:
             if matrix_type == MatrixType.ADJACENCY:
-                matirces.append(nx.adjacency_matrix(tempG).todense())
+                matirces.append(nx.adjacency_matrix(g).todense())
             elif matrix_type == MatrixType.DEGREE:
-                matirces.append(np.diag([d for n, d in tempG.degree()]))
+                matirces.append(np.diag([d for n, d in g.degree()]))
             elif matrix_type == MatrixType.LAPLACIAN:
-                matirces.append(nx.laplacian_matrix(tempG).todense())    
+                matirces.append(nx.laplacian_matrix(g).todense())    
         return matirces
     
     
@@ -278,16 +285,14 @@ class TonnetzQuarterTrack(Tonnetz):
         Return the centrality of each quarter transition in self.transitions
         '''
         centralities = []
-        for trans in self.transitions:
-            tempG = nx.Graph()
-            tempG.add_nodes_from(self.G.nodes)
-            tempG.add_weighted_edges_from([(n0, n1, w) for (n0, n1), w in trans.items()])
+        graphs = self.get_weighted_graphs()
+        for g in graphs:
             if centrality_type == CentralityType.DEGREE:
-                centralities.append(nx.degree_centrality(tempG))
+                centralities.append(nx.degree_centrality(g))
             elif centrality_type == CentralityType.CLOSENESS:
-                centralities.append(nx.closeness_centrality(tempG))
+                centralities.append(nx.closeness_centrality(g))
             elif centrality_type == CentralityType.BETWEENESS:
-                centralities.append(nx.betweenness_centrality(tempG))
+                centralities.append(nx.betweenness_centrality(g))
             elif centrality_type == CentralityType.EIGENVECTOR:
-                centralities.append(nx.eigenvector_centrality(tempG))
+                centralities.append(nx.eigenvector_centrality(g))
         return centralities    
