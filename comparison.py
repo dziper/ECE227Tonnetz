@@ -6,7 +6,8 @@ from tonnetz import NoteTransitions
 from typing import List, Optional, Dict, Tuple, Callable
 import numpy as np
 from tqdm import tqdm
-
+import concurrent.futures
+import threading
 
 @dataclass
 class Comparison:
@@ -89,3 +90,44 @@ def compute_similarity_matrix(song_ids: List[str], similarity_function: Callable
             similarity_matrix[i, j] = comp.total_score
             similarity_matrix[j, i] = comp.total_score
     return similarity_matrix, comparisons
+
+
+def concur_compare_and_store(matrix, lock, i, j, song1, song2):
+    if i % 100 == 0 and j % 100 == 0:
+        print(f"{i}, {j} ({song1}, {song2})")
+    s1 = AnalyzedSong(song1)
+    s2 = AnalyzedSong(song2)
+    comp = simple_compare(s1, s2)
+    with lock:
+        matrix[i][j] = comp.total_score
+        matrix[j][i] = comp.total_score  # Ensure the matrix is symmetric
+
+
+def pairs(n):
+    return [(i, j) for i in range(n) for j in range(i + 1)]
+
+
+def compare_songs_concurrently(songs, max_workers=4):
+    # Number of songs
+    n = len(songs)
+    # Initialize the similarity matrix with zeros
+    similarity_matrix = np.zeros((n, n))
+
+    song_pairs = [(i, j, songs[i], songs[j]) for i in range(n) for j in range(i + 1)]
+
+    def task(pair):
+        i, j, song1, song2 = pair
+        print(f"{i}, {j} ({song1}, {song2})")
+        similarity = simple_compare(AnalyzedSong(song1), AnalyzedSong(song2))
+        return i, j, similarity.total_score
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        # Map the task to the song pairs
+        results = executor.map(task, song_pairs)
+
+        # Store the results in the similarity matrix
+        for i, j, similarity in results:
+            similarity_matrix[i][j] = similarity
+            similarity_matrix[j][i] = similarity  # Ensure the matrix is symmetric
+
+    return similarity_matrix

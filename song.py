@@ -187,12 +187,14 @@ class AnalyzedSong:
             
         
 
-def analyze_artist(artist, draw=False, skip_analyzed=False):
+def analyze_artist(artist, draw=False, skip_analyzed=True, tqdm_disable=True):
+    print(f"ANALYZING {artist}")
     def callback(artist, song_name):
-        if skip_analyzed and utils.to_pickle_path(utils.to_song_id(artist, song_name)):
+        if skip_analyzed and os.path.exists(utils.to_pickle_path(utils.to_song_id(artist, song_name[:-4]))):
             return
         anSong = AnalyzedSong(os.path.join(artist, song_name))
         anSong.draw(save_file=True, show_image=draw)
         anSong.save_pickle()
 
-    return utils.for_song_in_artist(artist, callback)
+    res = utils.for_song_in_artist(artist, callback, tqdm_disable=tqdm_disable)
+    print(f"COMPLETED {artist}")

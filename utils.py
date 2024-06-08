@@ -185,8 +185,6 @@ def tonnetz_dist(from_note, to_note, intervals=(3, 4, 5)):
 
 def for_song_in_artist(artist, callback, skip_digits=True, tqdm_disable=False, report_errors=True):
     song_dir = os.path.join(DATA_ROOT, artist)
-    output_dir = os.path.join(OUTPUT_ROOT, artist)
-    os.makedirs(output_dir, exist_ok=True)
 
     for song_name in tqdm(sorted(os.listdir(song_dir)), disable=tqdm_disable):
         if skip_digits and any(char.isdigit() for char in song_name):
