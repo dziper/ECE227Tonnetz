@@ -90,7 +90,7 @@ class AnalyzedSong:
         yplots = 3
 
         if output_file is None:
-            output_file = os.path.join(utils.OUTPUT_ROOT, "tonnetzImages", f"{self.to_song_id()}-tonnetz.png")
+            output_file = utils.to_draw_path(self.to_song_id())
 
         fig, axes = plt.subplots(xplots, yplots, figsize=(20, 20))
 
@@ -115,12 +115,12 @@ class AnalyzedSong:
         plt.close(fig)
 
     def to_song_id(self):
-        return f"{self.artist}-{self.name}"
+        return utils.to_song_id(self.artist, self.name)
 
     def save_pickle(self, output_path=None):
         if output_path is None:
             os.makedirs(os.path.join(utils.OUTPUT_ROOT, "songPickles"), exist_ok=True)
-            output_path = os.path.join(utils.OUTPUT_ROOT, "songPickles", f"{self.to_song_id()}.pickle")
+            output_path = utils.to_pickle_path(self.to_song_id())
         with open(output_path, 'wb') as handle:
             pickle.dump(self.__dict__, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -128,7 +128,7 @@ class AnalyzedSong:
         if not song_id.endswith(".pickle"):
             song_id = f"{song_id}.pickle"
         if not os.path.exists(song_id):
-            song_id = os.path.join(utils.OUTPUT_ROOT, "songPickles", song_id)
+            song_id = utils.to_pickle_path(song_id)
         with open(song_id, 'rb') as handle:
             tmp = pickle.load(handle)
         self.__dict__.update(tmp)
@@ -187,8 +187,10 @@ class AnalyzedSong:
             
         
 
-def analyze_artist(artist, draw=False):
+def analyze_artist(artist, draw=False, skip_analyzed=False):
     def callback(artist, song_name):
+        if skip_analyzed and utils.to_pickle_path(utils.to_song_id(artist, song_name)):
+            return
         anSong = AnalyzedSong(os.path.join(artist, song_name))
         anSong.draw(save_file=True, show_image=draw)
         anSong.save_pickle()

@@ -3,7 +3,9 @@ from dataclasses import dataclass, field
 import utils
 from song import AnalyzedSong
 from tonnetz import NoteTransitions
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Callable
+import numpy as np
+from tqdm import tqdm
 
 
 @dataclass
@@ -74,3 +76,16 @@ def simple_compare(song1: AnalyzedSong, song2: AnalyzedSong, max_channels=3, dis
     return comp
 
 
+def compute_similarity_matrix(song_ids: List[str], similarity_function: Callable[[AnalyzedSong, AnalyzedSong], Optional[Comparison]]):
+    n = len(song_ids)
+    similarity_matrix = np.zeros((n, n))
+    comparisons = [[None] * n for _ in range(n)]
+    for i in tqdm(range(n)):
+        currSong = AnalyzedSong(song_ids[i])
+        for j in range(i, n):
+            comp = similarity_function(currSong, AnalyzedSong(song_ids[j]))
+            if comp is None: continue
+            comparisons[i][j] = comp
+            similarity_matrix[i, j] = comp.total_score
+            similarity_matrix[j, i] = comp.total_score
+    return similarity_matrix, comparisons

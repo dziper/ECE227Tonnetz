@@ -198,3 +198,19 @@ def for_song_in_artist(artist, callback, skip_digits=True, tqdm_disable=False, r
             if report_errors:
                 print(f"{song_name}: {e}")
 
+
+def to_song_id(artist, name):
+    return f"{artist}-{name}"
+
+
+def to_pickle_path(song_id: str):
+    if song_id.endswith(".pickle"):
+        return os.path.join(OUTPUT_ROOT, "songPickles", f"{song_id}")
+    return os.path.join(OUTPUT_ROOT, "songPickles", f"{song_id}.pickle")
+
+
+def to_draw_path(song_id: str):
+    if song_id.endswith(".png"):
+        return os.path.join(OUTPUT_ROOT, "tonnetzImages", song_id)
+    else:
+        return os.path.join(OUTPUT_ROOT, "tonnetzImages", f"{song_id}-tonnetz.png")
