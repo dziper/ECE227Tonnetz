@@ -256,8 +256,12 @@ class TonnetzQuarterTrack(Tonnetz):
 
 
     def get_weighted_graphs(self) -> list:
+        '''
+        return four graphs for the four transitions
+        '''
         graphs = []
         for trans in self.transitions:
+            # tempG = nx.DiGraph()
             tempG = nx.Graph()
             tempG.add_nodes_from(self.G.nodes)
             tempG.add_weighted_edges_from([(n0, n1, w) for (n0, n1), w in trans.items()])
@@ -292,7 +296,7 @@ class TonnetzQuarterTrack(Tonnetz):
             elif centrality_type == CentralityType.CLOSENESS:
                 centralities.append(nx.closeness_centrality(g))
             elif centrality_type == CentralityType.BETWEENESS:
-                centralities.append(nx.betweenness_centrality(g))
+                centralities.append(nx.betweenness_centrality(g, weight='weight'))
             elif centrality_type == CentralityType.EIGENVECTOR:
-                centralities.append(nx.eigenvector_centrality(g))
+                centralities.append(nx.eigenvector_centrality(g, max_iter=300, weight='weight'))
         return centralities    
