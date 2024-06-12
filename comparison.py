@@ -115,6 +115,19 @@ def compute_similarity_matrix(song_ids: List[str], similarity_function: Callable
     return similarity_matrix, comparisons
 
 
+def compute_sim_portion(song_ids: List[str], similarity_function: Callable[[AnalyzedSong, AnalyzedSong], Optional[Comparison]], from_index, to_index):
+    n = len(song_ids)
+    similarity_matrix = np.zeros((to_index - from_index, n))
+    for i in tqdm(range(from_index, to_index)):
+        currSong = AnalyzedSong(song_ids[i])
+        for j in range(i, n):
+            comp = similarity_function(currSong, AnalyzedSong(song_ids[j]))
+            if comp is None: continue
+            similarity_matrix[i - from_index, j] = comp.total_score
+            # similarity_matrix[j, i] = comp.total_score
+    return similarity_matrix
+
+
 def concur_compare_and_store(matrix, lock, i, j, song1, song2):
     if i % 100 == 0 and j % 100 == 0:
         print(f"{i}, {j} ({song1}, {song2})")
