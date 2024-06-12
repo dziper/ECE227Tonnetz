@@ -33,6 +33,29 @@ class Comparison:
         matches = matches[:count]
         return matches
 
+    def get_best_instrument_matches(self, thresh=0.7):
+        instr_matches: List[Tuple[Tuple[int, int], float]] = []
+        qnote_count = len(self.scores)
+        for instr_pair in self.scores[0]:
+            avg_pair_score = sum(i[instr_pair] for i in self.scores) / qnote_count
+            if avg_pair_score > thresh:
+                instr_matches.append(
+                    (instr_pair, avg_pair_score)  # Sum scores across quarter notes
+                )
+
+        sorted_matches = sorted(instr_matches, key=lambda p: p[1], reverse=True)
+        # Greedily try to match second song's tracks to first song's tracks
+
+        song0_matches = set()
+        song1_matches = set()
+        matches = []
+        for match in sorted_matches:
+            if match[0][0] not in song0_matches and match[0][1] not in song1_matches:
+                song0_matches.add(match[0][0])
+                song1_matches.add(match[0][1])
+                matches.append(match)
+        return matches
+
     def __repr__(self):
         return f"{self.songs[0]} / {self.songs[1]} : Total {round(self.total_score, 3)}"
 

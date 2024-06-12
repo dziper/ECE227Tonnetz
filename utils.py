@@ -212,3 +212,9 @@ def to_draw_path(song_id: str):
         return os.path.join(OUTPUT_ROOT, "tonnetzImages", song_id)
     else:
         return os.path.join(OUTPUT_ROOT, "tonnetzImages", f"{song_id}-tonnetz.png")
+
+
+def to_midi_path(song_id: str):
+    hyphen = song_id.find("-")
+    song_id = song_id[:hyphen] + "/" + song_id[hyphen + 1:]
+    return os.path.join(DATA_ROOT, song_id + ".mid")

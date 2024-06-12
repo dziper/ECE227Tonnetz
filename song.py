@@ -46,6 +46,7 @@ class AnalyzedSong:
     artist: str
     path: str
     tracks: List[TonnetzQuarterTrack]
+    instrument_indices: List[int]
     # midi_file: mido.MidiFile
 
     def __init__(self, path=None):
@@ -55,6 +56,7 @@ class AnalyzedSong:
         self.name = os.path.splitext(os.path.basename(path))[0]
         self.artist = os.path.basename(os.path.dirname(path))
         self.tracks = []
+        self.instrument_indices = []
 
         if path.endswith(".mid"):
             self.load_song(path)
@@ -73,7 +75,7 @@ class AnalyzedSong:
 
         self.path = path
 
-        for instrument in pm.instruments:
+        for i, instrument in enumerate(pm.instruments):
             if instrument.is_drum: continue
             intervals = np.array([(pm.time_to_tick(note.start), pm.time_to_tick(note.end)) for note in instrument.notes])
             notes = np.array([note.pitch for note in instrument.notes])
@@ -83,6 +85,7 @@ class AnalyzedSong:
             ts = TonnetzQuarterTrack(instrument=utils.GM_INSTRUMENT_NAMES[instrument.program])
             if ts.analyze(note_interval, self.ticks_per_measure, self.beats_per_measure):
                 self.tracks.append(ts)
+                self.instrument_indices.append(i)
 
 
     def draw(self, output_file=None, save_file=True, show_image=False, draw_quarters=True):
