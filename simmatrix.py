@@ -5,7 +5,7 @@ import utils
 import pickle
 
 def main():
-    songs = os.listdir(os.path.join(utils.OUTPUT_ROOT, "songPickles"))
+    songs = sorted(os.listdir(os.path.join(utils.OUTPUT_ROOT, "songPickles")))
     total = len(os.listdir(os.path.join(utils.OUTPUT_ROOT, "songPickles")))
     print(total)
 
